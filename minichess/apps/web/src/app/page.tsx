@@ -1,0 +1,179 @@
+'use client';
+
+import { useState } from 'react';
+import { useAccount, useConnect } from 'wagmi';
+import { useGameContract } from '@/hooks/useGameContract';
+import ChessBoard from '@/components/ChessBoard';
+import { PlayerProfile } from '@/components/player-profile';
+import Link from 'next/link';
+
+export default function Home() {
+  const { address, isConnected } = useAccount();
+  const { connect } = useConnect();
+  const { createGameWithSession, joinGameWithSession, isReady, isSessionValid } = useGameContract();
+  
+  const [gameId, setGameId] = useState<number | null>(null);
+  const [joinGameId, setJoinGameId] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [player1, setPlayer1] = useState('');
+  const [player2, setPlayer2] = useState('');
+
+  const handleCreateGame = async () => {
+    setIsLoading(true);
+    try {
+      const tx = await createGameWithSession(connect);
+      alert('Game created with single signature! You can now play with zero gas fees.');
+      // You would get the gameId from the transaction receipt
+      console.log('Game created:', tx);
+    } catch (error) {
+      alert('Failed to create game');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleJoinGame = async () => {
+    if (!joinGameId) return;
+    
+    setIsLoading(true);
+    try {
+      const tx = await joinGameWithSession(parseInt(joinGameId), connect);
+      setGameId(parseInt(joinGameId));
+      alert('Game joined with single signature! Zero gas gameplay enabled.');
+      console.log('Game joined:', tx);
+      // Fetch player addresses from contract
+    } catch (error) {
+      alert('Failed to join game');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isConnected) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-4">MiniChess ♟️</h1>
+          <p className="mb-4">Please connect your wallet to start playing</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (gameId && player1 && player2) {
+    return (
+      <div className="min-h-screen p-4">
+        <div className="mb-4 text-center">
+          <div className="inline-flex rounded-lg bg-green-100 p-1 text-sm">
+            <span className="font-semibold text-green-800">
+              🔄 Gasless Mode
+            </span>
+          </div>
+        </div>
+        <h1 className="text-3xl font-bold text-center mb-6">MiniChess - Game #{gameId}</h1>
+        <ChessBoard gameId={gameId} player1={player1} player2={player2} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold mb-2">MiniChess ♟️</h1>
+          <p className="text-gray-600">Gasless chess on Celo with session keys</p>
+        </div>
+
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">✨ Single Signature Gameplay</h2>
+          <div className="text-sm text-gray-600 space-y-2">
+            <p>🔑 One signature for session + game creation</p>
+            <p>💸 Zero gas fees during gameplay</p>
+            <p>🚫 No popups after initial setup</p>
+            <p>⏱️ 2-hour session validity</p>
+          </div>
+        </div>
+
+        <div className="bg-white shadow-lg rounded-lg p-6 space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Create New Game</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Deposit 2.5 cUSD to start a game
+            </p>
+            <button
+              onClick={handleCreateGame}
+              disabled={isLoading || !isReady}
+              className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50"
+            >
+              {isLoading ? 'Creating...' : 'Create Game'}
+            </button>
+          </div>
+
+          <div className="border-t pt-6">
+            <h2 className="text-xl font-semibold mb-4">Join Existing Game</h2>
+            <input
+              type="text"
+              placeholder="Enter Game ID"
+              value={joinGameId}
+              onChange={(e) => setJoinGameId(e.target.value)}
+              className="w-full border rounded-lg p-3 mb-4"
+            />
+            <button
+              onClick={handleJoinGame}
+              disabled={isLoading || !joinGameId || !isReady}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isLoading ? 'Joining...' : 'Join Game'}
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white shadow-lg rounded-lg p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">🏆 Leaderboard</h2>
+            <Link href="/leaderboard">
+              <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                View Full Leaderboard →
+              </button>
+            </Link>
+          </div>
+          <div className="text-center py-4">
+            <p className="text-gray-600 mb-4">Top players competing in MiniChess</p>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="bg-yellow-50 p-3 rounded-lg">
+                <div className="text-2xl mb-1">🥇</div>
+                <div className="text-sm font-semibold">84% Win Rate</div>
+                <div className="text-xs text-gray-600">42W / 8L</div>
+              </div>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-2xl mb-1">🥈</div>
+                <div className="text-sm font-semibold">80% Win Rate</div>
+                <div className="text-xs text-gray-600">28W / 7L</div>
+              </div>
+              <div className="bg-amber-50 p-3 rounded-lg">
+                <div className="text-2xl mb-1">🥉</div>
+                <div className="text-sm font-semibold">75% Win Rate</div>
+                <div className="text-xs text-gray-600">45W / 15L</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <PlayerProfile />
+
+        <div className="bg-gray-50 rounded-lg p-4 text-sm">
+          <h3 className="font-semibold mb-2">How it works:</h3>
+          <ul className="list-disc list-inside space-y-1 text-gray-700">
+            <li>Each piece has a value (Pawn: $0.05 → Queen: $0.50)</li>
+            <li>When you capture, you earn the piece's value instantly</li>
+            <li>Starting escrow: $2.50 cUSD per player</li>
+            <li>Winner keeps their remaining balance</li>
+            <li className="font-semibold text-green-600">
+              ✨ Gasless Mode: Zero gas fees + no popups!
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
