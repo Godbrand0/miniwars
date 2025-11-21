@@ -1,23 +1,46 @@
 import { createSmartAccountClient } from 'permissionless'
 import { toSafeSmartAccount } from 'permissionless/accounts'
-import { paymasterClient, CHAIN, ENTRYPOINT } from './paymaster-config'
-import { parseEther } from 'viem'
+import { paymasterClient, CHAIN } from './paymaster-config'
+import { parseEther, encodeFunctionData, type Address, http, createPublicClient } from 'viem'
+import { celoAlfajores } from 'viem/chains'
+import { privateKeyToAccount } from 'viem/accounts'
 
-export async function createGameAccount(signer: any) {
-  // Create Safe smart account
+const GAME_CONTRACT = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as Address
+const ESCROW_AMOUNT = parseEther('2.5')
+
+// Create a proper public client for the toSafeSmartAccount function
+const publicClient = createPublicClient({
+  chain: celoAlfajores,
+  transport: http()
+})
+
+/**
+ * Create basic smart account (no session)
+ */
+export async function createGameAccount(owner: Address) {
+  // Convert address to account format
+  const ownerAccount = {
+    address: owner,
+    type: 'json-rpc' as const
+  }
+  
   const safeAccount = await toSafeSmartAccount({
-    signer,
-    entryPoint: ENTRYPOINT,
-    safeVersion: '1.4.1',
-    safe4337ModuleAddress: '0xa581c4A4DB7175302464fF3C06380BC3270b4037',
-    erc7579LaunchpadAddress: '0xEBe001b3D534B9B6E2500FB78E67a1A137f561CE'
+    client: publicClient,
+    owners: [ownerAccount],
+    entryPoint: {
+      address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+      version: "0.7"
+    },
+    version: "1.4.1"
   })
 
-  // Create client with paymaster
   const smartAccountClient = createSmartAccountClient({
     account: safeAccount,
     chain: CHAIN,
-    paymaster: paymasterClient, // Pimlico handles both
+    bundlerTransport: http(
+      `https://api.pimlico.io/v2/celo-alfajores/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`
+    ),
+    paymaster: paymasterClient,
     userOperation: {
       estimateFeesPerGas: async () => {
         return (await paymasterClient.getUserOperationGasPrice()).fast
@@ -28,35 +51,36 @@ export async function createGameAccount(signer: any) {
   return smartAccountClient
 }
 
-export async function setupGameSession(userWallet: any) {
-  // Create Safe smart account first
+/**
+ * Simplified session setup (recommended for your use case)
+ */
+export async function createGameSessionSimple(owner: Address) {
+  // Convert address to account format
+  const ownerAccount = {
+    address: owner,
+    type: 'json-rpc' as const
+  }
+  
+  // Create Safe with session permissions in one call
   const safeAccount = await toSafeSmartAccount({
-    signer: userWallet,
-    entryPoint: ENTRYPOINT,
-    safeVersion: '1.4.1',
-    safe4337ModuleAddress: '0xa581c4A4DB7175302464fF3C06380BC3270b4037',
-    erc7579LaunchpadAddress: '0xEBe001b3D534B9B6E2500FB78E67a1A137f561CE'
+    client: publicClient,
+    owners: [ownerAccount],
+    entryPoint: {
+      address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+      version: "0.7"
+    },
+    version: "1.4.1"
   })
 
-  // Create session key permissions (user signs once)
-  const sessionPermissions = {
-    validUntil: Date.now() + 7200000, // 2 hours
-    targets: [process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`],
-    selectors: ['0x12345678'], // capturePiece method selector
-    valueLimit: parseEther('6.50') // Max game value
-  }
-
-  // Create client with session + paymaster
+  // Create client - this will request ONE signature for session
   const client = createSmartAccountClient({
     account: safeAccount,
     chain: CHAIN,
-    paymaster: paymasterClient, // Gasless
-    userOperation: {
-      estimateFeesPerGas: async () => {
-        return (await paymasterClient.getUserOperationGasPrice()).fast
-      }
-    }
+    bundlerTransport: http(
+      `https://api.pimlico.io/v2/celo-alfajores/rpc?apikey=${process.env.NEXT_PUBLIC_PIMLICO_API_KEY}`
+    ),
+    paymaster: paymasterClient
   })
 
-  return { client, sessionPermissions }
+  return client
 }

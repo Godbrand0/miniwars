@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAccount, useConnect } from 'wagmi';
 import { useGameContract } from '@/hooks/useGameContract';
 import ChessBoard from '@/components/ChessBoard';
+import PracticeBoard from '@/components/PracticeBoard';
 import { PlayerProfile } from '@/components/player-profile';
 import Link from 'next/link';
 
@@ -17,6 +18,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [player1, setPlayer1] = useState('');
   const [player2, setPlayer2] = useState('');
+  const [showPracticeMode, setShowPracticeMode] = useState(false);
 
   const handleCreateGame = async () => {
     setIsLoading(true);
@@ -76,6 +78,23 @@ export default function Home() {
     );
   }
 
+  if (showPracticeMode) {
+    return (
+      <div className="min-h-screen p-4">
+        <div className="mb-4 text-center">
+          <button
+            onClick={() => setShowPracticeMode(false)}
+            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded"
+          >
+            ← Back to Main Menu
+          </button>
+        </div>
+        <h1 className="text-3xl font-bold text-center mb-6">Practice Mode</h1>
+        <PracticeBoard />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
@@ -126,6 +145,19 @@ export default function Home() {
               {isLoading ? 'Joining...' : 'Join Game'}
             </button>
           </div>
+        </div>
+
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">Practice Mode</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Play against the computer to improve your chess skills
+          </p>
+          <button
+            onClick={() => setShowPracticeMode(true)}
+            className="w-full bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700"
+          >
+            Practice vs Computer
+          </button>
         </div>
 
         <div className="bg-white shadow-lg rounded-lg p-6">

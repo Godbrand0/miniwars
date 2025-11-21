@@ -112,12 +112,12 @@ export function PlayerProfile() {
       const games = await Promise.all(
         (gameIds as bigint[]).map(async (gameId) => {
           try {
-            const gameData = await readContract({
+            const gameData = await readContract(config, {
               address: CONTRACT_ADDRESS,
               abi: CONTRACT_ABI,
               functionName: 'getGame',
               args: [gameId]
-            } as any)
+            })
 
             const gameDataResult = gameData as any[]
             if (!Array.isArray(gameDataResult) || gameDataResult.length === 0) {

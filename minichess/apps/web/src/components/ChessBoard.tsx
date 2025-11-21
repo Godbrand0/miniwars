@@ -94,7 +94,7 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
       (async () => {
         try {
           // Submit gasless capture transaction (no user signature needed!)
-          const txHash = await capturePiecePaymaster(gameId, pieceType);
+          const txHash = await capturePiecePaymaster(gameId, captor || address || '', pieceType);
           
           // Update UI immediately (optimistic)
           if (captor === player1) {

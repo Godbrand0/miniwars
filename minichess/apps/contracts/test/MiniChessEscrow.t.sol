@@ -2,10 +2,12 @@
 pragma solidity ^0.8.28;
 
 import "forge-std/Test.sol";
+import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
 import "../src/MiniChessEscrowPaymaster.sol";
 
 contract MiniChessEscrowTest is Test {
     MiniChessEscrowPaymaster public paymasterEscrow;
+
     
     // Use vm.addr to generate addresses from private keys
     address public owner = vm.addr(1);
@@ -43,7 +45,8 @@ contract MiniChessEscrowTest is Test {
         bytes32 sessionMessageHash = keccak256(abi.encodePacked(
             "AUTHORIZE_SESSION", uint256(1), block.chainid
         ));
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(player1PrivateKey, sessionMessageHash);
+        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(sessionMessageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(player1PrivateKey, ethSignedMessageHash);
         bytes memory signature = abi.encodePacked(r, s, v);
         
         paymasterEscrow.createGameWithSession(signature);
@@ -66,7 +69,8 @@ contract MiniChessEscrowTest is Test {
         bytes32 sessionMessageHash = keccak256(abi.encodePacked(
             "AUTHORIZE_SESSION", uint256(1), block.chainid
         ));
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(player1PrivateKey, sessionMessageHash);
+        bytes32 ethSignedMessageHash = MessageHashUtils.toEthSignedMessageHash(sessionMessageHash);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(player1PrivateKey, ethSignedMessageHash);
         bytes memory signature = abi.encodePacked(r, s, v);
         
         paymasterEscrow.createGameWithSession(signature);
@@ -79,7 +83,8 @@ contract MiniChessEscrowTest is Test {
         bytes32 joinSessionHash = keccak256(abi.encodePacked(
             "AUTHORIZE_SESSION", uint256(1), block.chainid
         ));
-        (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(player2PrivateKey, joinSessionHash);
+        bytes32 ethSignedJoinMessageHash = MessageHashUtils.toEthSignedMessageHash(joinSessionHash);
+        (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(player2PrivateKey, ethSignedJoinMessageHash);
         bytes memory joinSignature = abi.encodePacked(r2, s2, v2);
         
         paymasterEscrow.joinGameWithSession(1, joinSignature);

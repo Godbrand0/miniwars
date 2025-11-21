@@ -154,6 +154,7 @@ contract MiniChessEscrowPaymaster is ReentrancyGuard {
         uint256 totalLost
     );
     
+   
     // ============ Constructor ============
     
     /**

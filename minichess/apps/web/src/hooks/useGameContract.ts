@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { setupGameSession } from '../lib/smart-account';
+import { createGameSessionSimple } from '../lib/smart-account';
 import { parseEther } from 'viem';
+import MiniChessEscrowPaymasterABI from '../contracts/MiniChessEscrowPaymaster.json';
 
 export function useGameContract() {
   const { address } = useAccount();
@@ -13,37 +14,27 @@ export function useGameContract() {
   async function createGameWithSession(wallet: any) {
     setLoading(true);
     try {
-      const { client, sessionPermissions } = await setupGameSession(wallet);
+      const client = await createGameSessionSimple(wallet.address);
       setClient(client);
       setSessionActive(true);
       
       // Store session info for auto-signing
       localStorage.setItem('gameSession', JSON.stringify({
-        validUntil: sessionPermissions.validUntil,
-        targets: sessionPermissions.targets,
-        selectors: sessionPermissions.selectors,
-        valueLimit: sessionPermissions.valueLimit
+        validUntil: Date.now() + 7200000, // 2 hours
+        targets: [process.env.NEXT_PUBLIC_CONTRACT_ADDRESS],
+        selectors: ['0xf7683440'], // capturePiecePaymaster selector
+        valueLimit: '2.5'
       }));
       
       // Create game with session signature
-      const sessionMessage = `AUTHORIZE_SESSION_${Date.now()}`;
-      const sessionSignature = await wallet.signMessage(sessionMessage);
+      const sessionMessageHash = require('viem').keccak256(
+        require('viem').toUtf8Bytes(`AUTHORIZE_SESSION${Date.now()}`)
+      );
+      const sessionSignature = await wallet.signMessage(sessionMessageHash);
       
       const tx = await client.writeContract({
         address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
-        abi: [
-          {
-            "inputs": [
-              {"name": "sessionSignature", "type": "bytes"}
-            ],
-            "name": "createGameWithSession",
-            "outputs": [
-              {"name": "", "type": "uint256"}
-            ],
-            "stateMutability": "nonpayable",
-            "type": "function"
-          }
-        ],
+        abi: MiniChessEscrowPaymasterABI.abi,
         functionName: 'createGameWithSession',
         args: [sessionSignature]
       });
@@ -62,36 +53,27 @@ export function useGameContract() {
   async function joinGameWithSession(gameId: number, wallet: any) {
     setLoading(true);
     try {
-      const { client, sessionPermissions } = await setupGameSession(wallet);
+      const client = await createGameSessionSimple(wallet.address);
       setClient(client);
       setSessionActive(true);
       
       // Store session info for auto-signing
       localStorage.setItem('gameSession', JSON.stringify({
-        validUntil: sessionPermissions.validUntil,
-        targets: sessionPermissions.targets,
-        selectors: sessionPermissions.selectors,
-        valueLimit: sessionPermissions.valueLimit
+        validUntil: Date.now() + 7200000, // 2 hours
+        targets: [process.env.NEXT_PUBLIC_CONTRACT_ADDRESS],
+        selectors: ['0xf7683440'], // capturePiecePaymaster selector
+        valueLimit: '2.5'
       }));
       
       // Join game with session signature
-      const sessionMessage = `AUTHORIZE_SESSION_${gameId}_${Date.now()}`;
-      const sessionSignature = await wallet.signMessage(sessionMessage);
+      const sessionMessageHash = require('viem').keccak256(
+        require('viem').toUtf8Bytes(`AUTHORIZE_SESSION${gameId}_${Date.now()}`)
+      );
+      const sessionSignature = await wallet.signMessage(sessionMessageHash);
       
       const tx = await client.writeContract({
         address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
-        abi: [
-          {
-            "inputs": [
-              {"name": "gameId", "type": "uint256"},
-              {"name": "sessionSignature", "type": "bytes"}
-            ],
-            "name": "joinGameWithSession",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-          }
-        ],
+        abi: MiniChessEscrowPaymasterABI.abi,
         functionName: 'joinGameWithSession',
         args: [BigInt(gameId), sessionSignature]
       });
@@ -110,16 +92,16 @@ export function useGameContract() {
   async function initializeGameSession(wallet: any) {
     setLoading(true);
     try {
-      const { client, sessionPermissions } = await setupGameSession(wallet);
+      const client = await createGameSessionSimple(wallet.address);
       setClient(client);
       setSessionActive(true);
       
       // Store session info for auto-signing
       localStorage.setItem('gameSession', JSON.stringify({
-        validUntil: sessionPermissions.validUntil,
-        targets: sessionPermissions.targets,
-        selectors: sessionPermissions.selectors,
-        valueLimit: sessionPermissions.valueLimit
+        validUntil: Date.now() + 7200000, // 2 hours
+        targets: [process.env.NEXT_PUBLIC_CONTRACT_ADDRESS],
+        selectors: ['0xf7683440'], // capturePiecePaymaster selector
+        valueLimit: '2.5'
       }));
       
     } catch (error) {
@@ -130,27 +112,25 @@ export function useGameContract() {
   }
 
   // Gasless capture transaction (no user signature needed)
-  async function capturePiecePaymaster(gameId: number, pieceType: number) {
+  async function capturePiecePaymaster(gameId: number, captor: string, pieceType: number) {
     if (!client) throw new Error('Client not initialized');
     if (!sessionActive) throw new Error('Session not active');
 
+    // Create signature for capture
+    const captureMessageHash = require('viem').keccak256(
+      require('viem').toUtf8Bytes(`CAPTURE_PIECE${gameId}${captor}${pieceType}`)
+    );
+    const sessionData = JSON.parse(localStorage.getItem('gameSession') || '{}');
+    const sessionSignature = await window.ethereum.request({
+      method: 'personal_sign',
+      params: [captureMessageHash, sessionData.address || captor]
+    });
+
     const tx = await client.writeContract({
       address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
-      abi: [
-        {
-          "inputs": [
-            {"name": "gameId", "type": "uint256"},
-            {"name": "pieceType", "type": "uint8"}
-          ],
-          "name": "capturePiecePaymaster",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        }
-      ],
+      abi: MiniChessEscrowPaymasterABI.abi,
       functionName: 'capturePiecePaymaster',
-      args: [BigInt(gameId), pieceType]
-      // No signature needed - session key auto-signs!
+      args: [BigInt(gameId), captor as `0x${string}`, pieceType, sessionSignature]
     });
 
     return tx;
@@ -162,24 +142,7 @@ export function useGameContract() {
 
     const stats = await client.readContract({
       address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
-      abi: [
-        {
-          "inputs": [
-            {"name": "player", "type": "address"}
-          ],
-          "name": "getPlayerStats",
-          "outputs": [
-            {"name": "gamesPlayed", "type": "uint256"},
-            {"name": "gamesWon", "type": "uint256"},
-            {"name": "gamesLost", "type": "uint256"},
-            {"name": "totalEarned", "type": "uint256"},
-            {"name": "totalLost", "type": "uint256"},
-            {"name": "winRate", "type": "uint256"}
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        }
-      ],
+      abi: MiniChessEscrowPaymasterABI.abi,
       functionName: 'getPlayerStats',
       args: [playerAddress as `0x${string}`]
     });
@@ -193,21 +156,7 @@ export function useGameContract() {
 
     const gameHistory = await client.readContract({
       address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
-      abi: [
-        {
-          "inputs": [
-            {"name": "player", "type": "address"},
-            {"name": "limit", "type": "uint256"},
-            {"name": "offset", "type": "uint256"}
-          ],
-          "name": "getPlayerGameHistory",
-          "outputs": [
-            {"name": "", "type": "uint256[]"}
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        }
-      ],
+      abi: MiniChessEscrowPaymasterABI.abi,
       functionName: 'getPlayerGameHistory',
       args: [playerAddress as `0x${string}`, BigInt(limit), BigInt(offset)]
     });
@@ -221,19 +170,7 @@ export function useGameContract() {
 
     const count = await client.readContract({
       address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
-      abi: [
-        {
-          "inputs": [
-            {"name": "player", "type": "address"}
-          ],
-          "name": "getPlayerGameCount",
-          "outputs": [
-            {"name": "", "type": "uint256"}
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        }
-      ],
+      abi: MiniChessEscrowPaymasterABI.abi,
       functionName: 'getPlayerGameCount',
       args: [playerAddress as `0x${string}`]
     });
