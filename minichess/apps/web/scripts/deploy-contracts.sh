@@ -37,15 +37,15 @@ forge test --gas-report
 echo "🔨 Building contracts..."
 forge build
 
-# Deploy to Alfajores (testnet)
-if [ "$NETWORK" = "alfajores" ] || [ -z "$NETWORK" ]; then
-    echo "🌐 Deploying to Alfajores testnet..."
+# Deploy to Celo Sepolia (testnet)
+if [ "$NETWORK" = "celo-sepolia" ] || [ -z "$NETWORK" ]; then
+    echo "🌐 Deploying to Celo Sepolia testnet..."
     
     # Deploy paymaster escrow
     echo "  💳 Deploying MiniChessEscrowPaymaster..."
-    PAYMASTER_ADDRESS=$(forge script script/DeployPaymaster.s.sol --rpc-url $CELO_ALFAJORES_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify | grep "MiniChessEscrowPaymaster deployed at:" | awk '{print $4}')
+    PAYMASTER_ADDRESS=$(forge script script/DeployPaymaster.s.sol --rpc-url $CELO_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast --verify | grep "MiniChessEscrowPaymaster deployed at:" | awk '{print $4}')
     
-    echo "✅ Alfajores deployment complete!"
+    echo "✅ Celo Sepolia deployment complete!"
 fi
 
 # Deploy to Mainnet
@@ -71,7 +71,7 @@ cp out/MiniChessEscrowPaymaster.sol/MiniChessEscrowPaymaster.json ../web/src/con
 # Create deployment info file
 cat > ../web/src/contracts/deployments.json << EOF
 {
-  "alfajores": {
+  "celo-sepolia": {
     "MiniChessEscrowPaymaster": "$PAYMASTER_ADDRESS"
   },
   "mainnet": {
@@ -90,8 +90,8 @@ cat > ../web/.env.local << EOF
 NEXT_PUBLIC_CONTRACT_ADDRESS=$PAYMASTER_ADDRESS
 
 # Network Configuration
-NEXT_PUBLIC_NETWORK_ID=${NETWORK:-alfajores}
-NEXT_PUBLIC_RPC_URL=${CELO_ALFAJORES_RPC_URL:-$CELO_MAINNET_RPC_URL}
+NEXT_PUBLIC_NETWORK_ID=${NETWORK:-celo-sepolia}
+NEXT_PUBLIC_RPC_URL=${CELO_SEPOLIA_RPC_URL:-$CELO_MAINNET_RPC_URL}
 
 # Pimlico Configuration
 NEXT_PUBLIC_PIMLICO_API_KEY=$PIMLICO_API_KEY
@@ -104,7 +104,7 @@ echo "✅ Frontend environment variables updated"
 echo ""
 echo "🎉 Deployment Summary:"
 echo "======================="
-echo "Network: ${NETWORK:-alfajores}"
+echo "Network: ${NETWORK:-celo-sepolia}"
 echo "MiniChessEscrowPaymaster: $PAYMASTER_ADDRESS"
 echo ""
 echo "📱 Frontend updated with new contract addresses"

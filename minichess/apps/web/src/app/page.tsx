@@ -7,6 +7,9 @@ import ChessBoard from '@/components/ChessBoard';
 import PracticeBoard from '@/components/PracticeBoard';
 import { PlayerProfile } from '@/components/player-profile';
 import Link from 'next/link';
+import { createPublicClient, http, decodeEventLog } from 'viem';
+import { celoSepolia } from 'viem/chains';
+import MiniChessEscrowPaymasterABI from '@/contracts/MiniChessEscrowPaymaster.json';
 
 export default function Home() {
   const { address, isConnected } = useAccount();
@@ -20,14 +23,54 @@ export default function Home() {
   const [player2, setPlayer2] = useState('');
   const [showPracticeMode, setShowPracticeMode] = useState(false);
 
+  const publicClient = createPublicClient({
+    chain: celoSepolia,
+    transport: http()
+  });
+
   const handleCreateGame = async () => {
     setIsLoading(true);
     try {
-      const tx = await createGameWithSession(connect);
-      alert('Game created with single signature! You can now play with zero gas fees.');
-      // You would get the gameId from the transaction receipt
-      console.log('Game created:', tx);
+      const txHash = await createGameWithSession(address);
+      console.log('Game creation tx:', txHash);
+      
+      // Wait for transaction receipt
+      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
+      
+      // Find GameCreated event
+      const gameCreatedLog = receipt.logs.find(log => {
+        try {
+          const event = decodeEventLog({
+            abi: MiniChessEscrowPaymasterABI.abi,
+            data: log.data,
+            topics: log.topics
+          });
+          return event.eventName === 'GameCreated';
+        } catch {
+          return false;
+        }
+      });
+
+      if (gameCreatedLog) {
+        const event = decodeEventLog({
+          abi: MiniChessEscrowPaymasterABI.abi,
+          data: gameCreatedLog.data,
+          topics: gameCreatedLog.topics
+        });
+        
+        // @ts-ignore
+        const newGameId = Number(event.args.gameId);
+        console.log('Game created with ID:', newGameId);
+        
+        setGameId(newGameId);
+        setPlayer1(address || '');
+        alert(`Game created! ID: ${newGameId}. Share this ID with your opponent.`);
+      } else {
+        console.error('GameCreated event not found in logs');
+        alert('Game created but could not retrieve ID. Check console.');
+      }
     } catch (error) {
+      console.error('Failed to create game:', error);
       alert('Failed to create game');
     } finally {
       setIsLoading(false);
@@ -39,12 +82,18 @@ export default function Home() {
     
     setIsLoading(true);
     try {
-      const tx = await joinGameWithSession(parseInt(joinGameId), connect);
+      const txHash = await joinGameWithSession(parseInt(joinGameId), address);
+      console.log('Game join tx:', txHash);
+      
+      // Wait for transaction receipt
+      await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
+      
       setGameId(parseInt(joinGameId));
-      alert('Game joined with single signature! Zero gas gameplay enabled.');
-      console.log('Game joined:', tx);
-      // Fetch player addresses from contract
+      setPlayer2(address || '');
+      alert('Game joined successfully! Zero gas gameplay enabled.');
+      
     } catch (error) {
+      console.error('Failed to join game:', error);
       alert('Failed to join game');
     } finally {
       setIsLoading(false);

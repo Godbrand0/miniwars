@@ -49,7 +49,7 @@ contract MiniChessEscrowTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(player1PrivateKey, ethSignedMessageHash);
         bytes memory signature = abi.encodePacked(r, s, v);
         
-        paymasterEscrow.createGameWithSession(signature);
+        paymasterEscrow.createGameWithSession(signature, player1);
         
         // Verify game state
         (address p1, address p2, uint256 player1Balance, uint256 player2Balance, , , , ) = paymasterEscrow.getGame(1);
@@ -73,7 +73,7 @@ contract MiniChessEscrowTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(player1PrivateKey, ethSignedMessageHash);
         bytes memory signature = abi.encodePacked(r, s, v);
         
-        paymasterEscrow.createGameWithSession(signature);
+        paymasterEscrow.createGameWithSession(signature, player1);
         vm.stopPrank();
         
         // Join game
@@ -87,7 +87,7 @@ contract MiniChessEscrowTest is Test {
         (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(player2PrivateKey, ethSignedJoinMessageHash);
         bytes memory joinSignature = abi.encodePacked(r2, s2, v2);
         
-        paymasterEscrow.joinGameWithSession(1, joinSignature);
+        paymasterEscrow.joinGameWithSession(1, joinSignature, player2);
         
         // Verify game state
         (address p1, address p2, uint256 player1Balance, uint256 player2Balance, , , , ) = paymasterEscrow.getGame(1);

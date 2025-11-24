@@ -26,8 +26,8 @@ contract MiniChessEscrowPaymaster is ReentrancyGuard {
     
     // ============ Constants ============
     
-    /// @dev cUSD token address on Celo Alfajores testnet
-    address public constant CUSD_TOKEN = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
+    /// @dev cUSD token address on Celo Sepolia testnet
+    address public constant CUSD_TOKEN = 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b;
     
     /// @dev ERC20 token interface for cUSD
     IERC20 public immutable cUSD;
@@ -186,7 +186,8 @@ contract MiniChessEscrowPaymaster is ReentrancyGuard {
      * - Emits GameCreated and SessionAuthorized events
      */
     function createGameWithSession(
-        bytes calldata sessionSignature
+        bytes calldata sessionSignature,
+        address actualSigner
     ) external nonReentrant returns (uint256) {
         bytes32 sessionMessageHash = keccak256(abi.encodePacked(
             "AUTHORIZE_SESSION", gameCounter + 1, block.chainid
@@ -197,7 +198,7 @@ contract MiniChessEscrowPaymaster is ReentrancyGuard {
             sessionSignature
         );
         
-        require(sessionSigner == msg.sender, "Invalid session signature");
+        require(sessionSigner == actualSigner, "Invalid session signature");
         
         require(
             cUSD.transferFrom(msg.sender, address(this), ESCROW_AMOUNT),
@@ -241,14 +242,16 @@ contract MiniChessEscrowPaymaster is ReentrancyGuard {
      * - Authorizes msg.sender for gasless gameplay
      * - Emits PlayerJoined and SessionAuthorized events
      */
+
     function joinGameWithSession(
         uint256 gameId,
-        bytes calldata sessionSignature
+        bytes calldata sessionSignature,
+        address actualSigner
     ) external nonReentrant {
         Game storage game = games[gameId];
         require(game.status == GameStatus.WAITING, "Game not available");
-        require(game.player1 != msg.sender, "Cannot play yourself");
-        require(game.player2 == address(0), "Game full");
+        require(game.player2 == address(0), "Game already has player 2");
+        require(msg.sender != game.player1, "Cannot join own game");
         
         bytes32 sessionMessageHash = keccak256(abi.encodePacked(
             "AUTHORIZE_SESSION", gameId, block.chainid
@@ -259,7 +262,7 @@ contract MiniChessEscrowPaymaster is ReentrancyGuard {
             sessionSignature
         );
         
-        require(sessionSigner == msg.sender, "Invalid session signature");
+        require(sessionSigner == actualSigner, "Invalid session signature");
         
         require(
             cUSD.transferFrom(msg.sender, address(this), ESCROW_AMOUNT),
@@ -307,7 +310,8 @@ contract MiniChessEscrowPaymaster is ReentrancyGuard {
         uint256 gameId,
         address captor,
         PieceType pieceType,
-        bytes calldata signature
+        bytes calldata signature,
+        address actualSigner
     ) external nonReentrant {
         require(msg.sender == address(entryPoint), "Only entry point");
         
@@ -334,7 +338,7 @@ contract MiniChessEscrowPaymaster is ReentrancyGuard {
             signature
         );
         
-        require(signer == captor, "Invalid signature");
+        require(signer == actualSigner, "Invalid signature");
         
         uint256 captureValue = getPieceValue(pieceType);
         require(captureValue > 0, "Invalid piece");

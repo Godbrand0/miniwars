@@ -1,0 +1,225 @@
+🚀 Starting Custom Paymaster Deployment for MiniChess
+================================================
+📋 Checking environment variables...
+ℹ️  Using provided private key
+ℹ️  Using default MiniChess game contract address
+✅ Environment variables are set
+📋 Game Contract: 0x2D44905Ca27E1d45fFCe14E69effa8A06BAb6996
+
+📜 Deploying Custom Paymaster Contract...
+----------------------------------------
+🔨 Building contracts...
+No files changed, compilation skipped
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> test/MiniChessEscrow.t.sol:4:8
+  |
+4 | import "forge-std/Test.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> test/MiniChessEscrow.t.sol:5:8
+  |
+5 | import "openzeppelin-contracts/contracts/utils/cryptography/MessageHashUtils.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> test/MiniChessEscrow.t.sol:6:8
+  |
+6 | import "../src/MiniChessEscrowPaymaster.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> script/DeployPaymaster.s.sol:4:8
+  |
+4 | import "forge-std/Script.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> script/DeployPaymaster.s.sol:5:8
+  |
+5 | import "../src/MiniChessEscrowPaymaster.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> script/DeployCustomPaymaster.s.sol:4:8
+  |
+4 | import "forge-std/Script.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> script/DeployCustomPaymaster.s.sol:5:8
+  |
+5 | import "../src/MiniChessCustomPaymaster.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> script/DeployCustomPaymaster.s.sol:6:8
+  |
+6 | import "../src/MiniChessEscrowPaymaster.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> src/MiniChessEscrowPaymaster.sol:4:8
+  |
+4 | import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> src/MiniChessCustomPaymaster.sol:4:8
+  |
+4 | import "@account-abstraction/contracts/core/BasePaymaster.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> src/MiniChessCustomPaymaster.sol:5:8
+  |
+5 | import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> src/MiniChessCustomPaymaster.sol:6:8
+  |
+6 | import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> src/MiniChessCustomPaymaster.sol:7:8
+  |
+7 | import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> src/MiniChessCustomPaymaster.sol:8:8
+  |
+8 | import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[screaming-snake-case-immutable]: immutables should use SCREAMING_SNAKE_CASE
+  --> src/MiniChessCustomPaymaster.sol:38:29
+   |
+38 |     IERC20 public immutable celoToken;
+   |                             ^^^^^^^^^
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#screaming-snake-case-immutable
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> src/MiniChessEscrowPaymaster.sol:5:8
+  |
+5 | import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> src/MiniChessEscrowPaymaster.sol:6:8
+  |
+6 | import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> src/MiniChessEscrowPaymaster.sol:7:8
+  |
+7 | import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[unaliased-plain-import]: use named imports '{A, B}' or alias 'import ".." as X'
+ --> src/MiniChessEscrowPaymaster.sol:8:8
+  |
+8 | import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
+  |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = help: https://book.getfoundry.sh/reference/forge/forge-lint#unaliased-plain-import
+
+note[screaming-snake-case-immutable]: immutables should use SCREAMING_SNAKE_CASE
+  --> src/MiniChessEscrowPaymaster.sol:33:29
+   |
+33 |     IERC20 public immutable cUSD;
+   |                             ^^^^
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#screaming-snake-case-immutable
+
+note[screaming-snake-case-immutable]: immutables should use SCREAMING_SNAKE_CASE
+  --> src/MiniChessEscrowPaymaster.sol:36:34
+   |
+36 |     IEntryPoint public immutable entryPoint;
+   |                                  ^^^^^^^^^^
+   |
+   = help: https://book.getfoundry.sh/reference/forge/forge-lint#screaming-snake-case-immutable
+
+note[asm-keccak256]: use of inefficient hashing mechanism; consider using inline assembly
+   --> src/MiniChessEscrowPaymaster.sol:192:38
+    |
+192 |           bytes32 sessionMessageHash = keccak256(abi.encodePacked(
+    |  ______________________________________^
+193 | |             "AUTHORIZE_SESSION", gameCounter + 1, block.chainid
+194 | |         ));
+    | |__________^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#asm-keccak256
+
+note[asm-keccak256]: use of inefficient hashing mechanism; consider using inline assembly
+   --> src/MiniChessEscrowPaymaster.sol:256:38
+    |
+256 |           bytes32 sessionMessageHash = keccak256(abi.encodePacked(
+    |  ______________________________________^
+257 | |             "AUTHORIZE_SESSION", gameId, block.chainid
+258 | |         ));
+    | |__________^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#asm-keccak256
+
+note[asm-keccak256]: use of inefficient hashing mechanism; consider using inline assembly
+   --> src/MiniChessEscrowPaymaster.sol:326:29
+    |
+326 |           bytes32 captureId = keccak256(abi.encodePacked(
+    |  _____________________________^
+327 | |             gameId, captor, pieceType, block.timestamp
+328 | |         ));
+    | |__________^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#asm-keccak256
+
+note[asm-keccak256]: use of inefficient hashing mechanism; consider using inline assembly
+   --> src/MiniChessEscrowPaymaster.sol:332:31
+    |
+332 |           bytes32 messageHash = keccak256(abi.encodePacked(
+    |  _______________________________^
+333 | |             "CAPTURE_PIECE", gameId, captor, uint256(pieceType), block.chainid
+334 | |         ));
+    | |__________^
+    |
+    = help: https://book.getfoundry.sh/reference/forge/forge-lint#asm-keccak256
+
+🚀 Deploying paymaster...

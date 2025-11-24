@@ -113,7 +113,7 @@ npm run deploy:mainnet
 
 ## 🎯 Next Steps
 
-1. **Test on Alfajores**: Verify all gameplay modes work correctly
+1. **Test on Celo Sepolia**: Verify all gameplay modes work correctly
 2. **Fund Paymaster**: Add credits for mainnet usage
 3. **Deploy to Mainnet**: Launch production version
 4. **Monitor Usage**: Track gas costs and user sessions
