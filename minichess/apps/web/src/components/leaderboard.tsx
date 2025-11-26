@@ -58,14 +58,16 @@ export function Leaderboard() {
       const playerStatsPromises = knownPlayerAddresses.map(async (playerAddress) => {
         try {
           const stats = await getPlayerStats(playerAddress);
+          // Type assertion to handle the unknown return type from contract
+          const statsArray = stats as unknown as bigint[];
           return {
             address: playerAddress,
-            gamesPlayed: stats.gamesPlayed,
-            gamesWon: stats.gamesWon,
-            gamesLost: stats.gamesLost,
-            totalEarned: stats.totalEarned,
-            totalLost: stats.totalLost,
-            winRate: stats.winRate
+            gamesPlayed: statsArray[0] || 0n,
+            gamesWon: statsArray[1] || 0n,
+            gamesLost: statsArray[2] || 0n,
+            totalEarned: statsArray[3] || 0n,
+            totalLost: statsArray[4] || 0n,
+            winRate: statsArray[5] || 0n
           };
         } catch (error) {
           console.error(`Failed to fetch stats for ${playerAddress}:`, error);

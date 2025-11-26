@@ -315,8 +315,8 @@ export function useGameContract() {
       
     } catch (error) {
       console.error('[Game Contract] Failed to initialize session:', error);
-      console.log('🔍 DEBUG: Error message:', error.message);
-      console.log('🔍 DEBUG: Error stack:', error.stack);
+      console.log('🔍 DEBUG: Error message:', error instanceof Error ? error.message : String(error));
+      console.log('🔍 DEBUG: Error stack:', error instanceof Error ? error.stack : 'No stack trace available');
     } finally {
       setLoading(false);
     }

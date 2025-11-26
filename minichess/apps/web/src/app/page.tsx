@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAccount, useConnect } from 'wagmi';
+import { useRouter } from 'next/navigation';
 import { useGameContract } from '@/hooks/useGameContract';
 import ChessBoard from '@/components/ChessBoard';
 import PracticeBoard from '@/components/PracticeBoard';
@@ -11,9 +12,11 @@ import { createPublicClient, http, decodeEventLog } from 'viem';
 import { celoSepolia } from 'viem/chains';
 import MiniChessEscrowPaymasterABI from '@/contracts/MiniChessEscrowPaymaster.json';
 
+
 export default function Home() {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
+  const router = useRouter();
   const { createGameWithSession, joinGameWithSession, isReady, isSessionValid } = useGameContract();
   
   const [gameId, setGameId] = useState<number | null>(null);
@@ -62,9 +65,8 @@ export default function Home() {
         const newGameId = Number(event.args.gameId);
         console.log('Game created with ID:', newGameId);
         
-        setGameId(newGameId);
-        setPlayer1(address || '');
-        alert(`Game created! ID: ${newGameId}. Share this ID with your opponent.`);
+        // Redirect to game waiting room
+        router.push(`/game/${newGameId}`);
       } else {
         console.error('GameCreated event not found in logs');
         alert('Game created but could not retrieve ID. Check console.');
@@ -88,9 +90,8 @@ export default function Home() {
       // Wait for transaction receipt
       await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
       
-      setGameId(parseInt(joinGameId));
-      setPlayer2(address || '');
-      alert('Game joined successfully! Zero gas gameplay enabled.');
+      // Redirect to game page
+      router.push(`/game/${joinGameId}`);
       
     } catch (error) {
       console.error('Failed to join game:', error);
