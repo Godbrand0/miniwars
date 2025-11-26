@@ -6,6 +6,7 @@ import { useAccount } from 'wagmi';
 import { createPublicClient, http } from 'viem';
 import { celoSepolia } from 'viem/chains';
 import ChessBoard from '@/components/ChessBoard';
+import { useGameContract } from '@/hooks/useGameContract';
 import MiniChessEscrowPaymasterABI from '@/contracts/MiniChessEscrowPaymaster.json';
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
@@ -14,6 +15,7 @@ export default function GamePage() {
   const params = useParams();
   const router = useRouter();
   const { address, isConnected } = useAccount();
+  const { cancelGame, loading: cancelLoading } = useGameContract();
   const gameId = Number(params.gameId);
 
   const [gameState, setGameState] = useState<{
@@ -22,9 +24,12 @@ export default function GamePage() {
     status: number;
     player1Balance: bigint;
     player2Balance: bigint;
+    createdAt: bigint;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [canCancel, setCanCancel] = useState(false);
 
   const publicClient = createPublicClient({
     chain: celoSepolia,
@@ -48,14 +53,15 @@ export default function GamePage() {
           args: [BigInt(gameId)]
         }) as [string, string, bigint, bigint, number, string, bigint, bigint];
 
-        const [player1, player2, player1Balance, player2Balance, status] = result;
+        const [player1, player2, player1Balance, player2Balance, status, winner, createdAt] = result;
 
         setGameState({
           player1,
           player2,
           status,
           player1Balance,
-          player2Balance
+          player2Balance,
+          createdAt
         });
         setIsLoading(false);
       } catch (err) {
@@ -73,6 +79,55 @@ export default function GamePage() {
 
     return () => clearInterval(interval);
   }, [gameId]);
+
+  // Track time elapsed since game creation
+  useEffect(() => {
+    if (!gameState || gameState.status !== 0) return;
+
+    const updateTimer = () => {
+      const now = Math.floor(Date.now() / 1000);
+      const created = Number(gameState.createdAt);
+      const elapsed = now - created;
+      setTimeElapsed(elapsed);
+      setCanCancel(elapsed >= 300); // 5 minutes = 300 seconds
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [gameState]);
+
+  const handleCancelGame = async () => {
+    if (!canCancel) {
+      alert('You must wait 5 minutes before cancelling');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to cancel this game? You will receive a full refund.')) {
+      return;
+    }
+
+    try {
+      const txHash = await cancelGame(gameId);
+      console.log('Cancel transaction:', txHash);
+      
+      // Wait a moment for the transaction to be processed
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Redirect to home
+      router.push('/');
+    } catch (error) {
+      console.error('Failed to cancel game:', error);
+      alert('Failed to cancel game. Please try again.');
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   if (!isConnected) {
     return (
@@ -184,15 +239,37 @@ export default function GamePage() {
 
             {isPlayer1 && (
               <div className="text-center">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                  <div className="text-sm text-gray-600 mb-2">
+                    Time elapsed: <span className="font-mono font-semibold">{formatTime(timeElapsed)}</span>
+                  </div>
+                  {!canCancel && (
+                    <div className="text-xs text-gray-500">
+                      Can cancel in: {formatTime(300 - timeElapsed)}
+                    </div>
+                  )}
+                </div>
+                
                 <p className="text-sm text-gray-600 mb-3">
                   Game will start automatically when Player 2 joins
                 </p>
-                <button
-                  onClick={() => router.push('/')}
-                  className="text-gray-600 hover:text-gray-800 text-sm underline"
-                >
-                  Cancel and go back
-                </button>
+                
+                {canCancel ? (
+                  <button
+                    onClick={handleCancelGame}
+                    disabled={cancelLoading}
+                    className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 mb-2"
+                  >
+                    {cancelLoading ? 'Cancelling...' : 'Cancel Game & Get Refund'}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => router.push('/')}
+                    className="text-gray-600 hover:text-gray-800 text-sm underline"
+                  >
+                    Go back (no refund)
+                  </button>
+                )}
               </div>
             )}
 

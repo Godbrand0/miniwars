@@ -17,10 +17,11 @@ export default function Home() {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
   const router = useRouter();
-  const { createGameWithSession, joinGameWithSession, isReady, isSessionValid } = useGameContract();
+  const { createGameWithSession, joinGameWithSession, cancelGame, isReady, isSessionValid } = useGameContract();
   
   const [gameId, setGameId] = useState<number | null>(null);
   const [joinGameId, setJoinGameId] = useState('');
+  const [cancelGameId, setCancelGameId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [player1, setPlayer1] = useState('');
   const [player2, setPlayer2] = useState('');
@@ -96,6 +97,28 @@ export default function Home() {
     } catch (error) {
       console.error('Failed to join game:', error);
       alert('Failed to join game');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelGame = async () => {
+    if (!cancelGameId) return;
+    
+    setIsLoading(true);
+    try {
+      const txHash = await cancelGame(parseInt(cancelGameId));
+      console.log('Cancel tx:', txHash);
+      
+      // Wait for transaction receipt
+      await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
+      
+      alert('Game cancelled successfully! Your funds have been refunded.');
+      setCancelGameId('');
+      
+    } catch (error) {
+      console.error('Failed to cancel game:', error);
+      alert('Failed to cancel game. Make sure 5 minutes have passed since creation.');
     } finally {
       setIsLoading(false);
     }
@@ -194,6 +217,30 @@ export default function Home() {
             >
               {isLoading ? 'Joining...' : 'Join Game'}
             </button>
+          </div>
+
+          <div className="border-t pt-6">
+            <h2 className="text-xl font-semibold mb-2">🔧 Cancel Stuck Game (Temporary)</h2>
+            <p className="text-xs text-gray-500 mb-4">
+              For games created before routing was added. Remove this later.
+            </p>
+            <input
+              type="text"
+              placeholder="Enter Game ID to Cancel"
+              value={cancelGameId}
+              onChange={(e) => setCancelGameId(e.target.value)}
+              className="w-full border rounded-lg p-3 mb-4"
+            />
+            <button
+              onClick={handleCancelGame}
+              disabled={isLoading || !cancelGameId}
+              className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50"
+            >
+              {isLoading ? 'Cancelling...' : 'Cancel Game & Get Refund'}
+            </button>
+            <p className="text-xs text-gray-500 mt-2">
+              ⚠️ Only works after 5 minutes have passed since game creation
+            </p>
           </div>
         </div>
 

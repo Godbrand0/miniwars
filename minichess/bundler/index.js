@@ -153,13 +153,13 @@ app.post('/sendUserOperation', async (req, res) => {
         });
         
         console.log('Transaction sent:', tx.hash);
-        // Don't wait for confirmation to avoid timeouts
-        // const receipt = await tx.wait();
-        // console.log('Transaction confirmed:', receipt.hash);
+        // Wait for confirmation to prevent nonce conflicts
+        const receipt = await tx.wait();
+        console.log('Transaction confirmed:', receipt.hash);
         
         results.push({
           transactionHash: tx.hash,
-          status: 'sent'
+          status: 'confirmed'
         });
       }
       

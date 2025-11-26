@@ -521,6 +521,71 @@ export function useGameContract() {
     return isValid;
   }
 
+  /**
+   * Cancel a waiting game and get refund
+   */
+  async function cancelGame(gameId: number) {
+    console.log('[Game Contract] Cancelling game:', gameId);
+    
+    if (!address) {
+      throw new Error('No wallet connected');
+    }
+
+    setLoading(true);
+    try {
+      const { encodeFunctionData, createWalletClient, custom } = require('viem');
+      
+      // Prepare cancel game transaction
+      const userOp = {
+        target: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
+        data: encodeFunctionData({
+          abi: MiniChessEscrowPaymasterABI.abi,
+          functionName: 'cancelGame',
+          args: [BigInt(gameId)]
+        }),
+        value: BigInt(0)
+      };
+
+      console.log('[Game Contract] Sending cancel operation to bundler');
+
+      // Convert BigInt values to strings for JSON serialization
+      const serializableOp = {
+        target: userOp.target,
+        data: userOp.data,
+        value: userOp.value.toString()
+      };
+
+      // Send to custom bundler
+      const bundlerUrl = process.env.NEXT_PUBLIC_BUNDLER_URL || 'http://localhost:3001';
+      const response = await fetch(`${bundlerUrl}/sendUserOperation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userOperation: {
+            sender: address,
+            operations: [serializableOp]
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Bundler error: ${error}`);
+      }
+      
+      const data = await response.json();
+      console.log('[Game Contract] Cancel transaction hash:', data.transactionHash);
+
+      return data.transactionHash;
+      
+    } catch (error) {
+      console.error('[Game Contract] Failed to cancel game:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }
+
   // Auto-initialize when wallet connects
   useEffect(() => {
     console.log('[Game Contract] Wallet connection detected:', address);
@@ -542,6 +607,7 @@ export function useGameContract() {
     initializeGameSession,
     createGameSessionSimple, // Add fallback for backward compatibility
     capturePiecePaymaster,
+    cancelGame,
     getPlayerStats,
     getPlayerGameHistory,
     getPlayerGameCount,
