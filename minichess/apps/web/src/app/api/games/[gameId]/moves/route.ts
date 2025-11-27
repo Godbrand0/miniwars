@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
 // Initialize Redis from environment variables
-// Expects UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
-const redis = Redis.fromEnv();
+// Supports both Vercel KV (KV_REST_API_URL/KV_REST_API_TOKEN)
+// and Upstash (UPSTASH_REDIS_REST_URL/UPSTASH_REDIS_REST_TOKEN)
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '',
+});
 
 interface GameMove {
   from: string;
