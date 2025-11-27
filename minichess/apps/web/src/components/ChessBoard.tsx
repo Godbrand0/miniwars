@@ -52,8 +52,21 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
 
   const isMyTurn = () => {
     const turn = game.turn();
-    if (turn === 'w' && address === player1) return true;
-    if (turn === 'b' && address === player2) return true;
+    const myAddress = address?.toLowerCase();
+    const p1 = player1.toLowerCase();
+    const p2 = player2.toLowerCase();
+
+    console.log('isMyTurn check:', {
+      turn,
+      myAddress,
+      player1: p1,
+      player2: p2,
+      isWhite: turn === 'w' && myAddress === p1,
+      isBlack: turn === 'b' && myAddress === p2
+    });
+
+    if (turn === 'w' && myAddress === p1) return true;
+    if (turn === 'b' && myAddress === p2) return true;
     return false;
   };
 
@@ -107,18 +120,22 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
       const data = await response.json();
       const moves = data.moves || [];
 
-      // Apply only new moves from opponent
-      const newMoves = moves.filter((move: any) => 
-        move.moveNumber > lastAppliedMoveNumber &&
-        move.player.toLowerCase() !== address?.toLowerCase()
-      );
+      console.log('[Move Sync] All moves:', moves);
+      console.log('[Move Sync] Last applied move number:', lastAppliedMoveNumber);
+      console.log('[Move Sync] Current address:', address?.toLowerCase());
 
-      if (newMoves.length > 0) {
-        console.log(`[Move Sync] Applying ${newMoves.length} new opponent move(s)`);
-        
-        const gameCopy = new Chess(game.fen());
-        
-        for (const move of newMoves) {
+      // Find the highest move number we've already seen
+      const allMoveNumbers = moves.map((m: any) => m.moveNumber);
+      const highestMoveNumber = allMoveNumbers.length > 0 ? Math.max(...allMoveNumbers) : 0;
+
+      // If we have new moves that we haven't processed yet
+      if (highestMoveNumber > lastAppliedMoveNumber) {
+        console.log(`[Move Sync] New moves detected, rebuilding game state from move ${lastAppliedMoveNumber + 1}`);
+
+        // Rebuild the entire game state from the move list
+        const gameCopy = new Chess();
+
+        for (const move of moves) {
           const result = gameCopy.move({
             from: move.from,
             to: move.to,
@@ -126,14 +143,15 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
           });
 
           if (result) {
-            console.log(`[Move Sync] Applied move ${move.moveNumber}: ${move.from} -> ${move.to}`);
+            console.log(`[Move Sync] Applied move ${move.moveNumber}: ${move.from} -> ${move.to} by ${move.player}`);
           } else {
-            console.error(`[Move Sync] Failed to apply move ${move.moveNumber}`);
+            console.error(`[Move Sync] Failed to apply move ${move.moveNumber}:`, move);
           }
         }
 
+        console.log('[Move Sync] Updated game FEN:', gameCopy.fen());
         setGame(gameCopy);
-        setLastAppliedMoveNumber(moves[moves.length - 1].moveNumber);
+        setLastAppliedMoveNumber(highestMoveNumber);
       }
     } catch (error) {
       console.error('[Move Sync] Error fetching moves:', error);
