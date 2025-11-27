@@ -3,14 +3,24 @@
 import { useState } from 'react';
 import { useAccount, useConnect } from 'wagmi';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useGameContract } from '@/hooks/useGameContract';
-import ChessBoard from '@/components/ChessBoard';
-import PracticeBoard from '@/components/PracticeBoard';
 import { PlayerProfile } from '@/components/player-profile';
 import Link from 'next/link';
 import { createPublicClient, http, decodeEventLog } from 'viem';
 import { celoSepolia } from 'viem/chains';
 import MiniChessEscrowPaymasterABI from '@/contracts/MiniChessEscrowPaymaster.json';
+
+// Dynamic imports with no SSR
+const ChessBoard = dynamic(() => import('@/components/ChessBoard'), {
+  ssr: false,
+  loading: () => <div>Loading chess board...</div>
+});
+
+const PracticeBoard = dynamic(() => import('@/components/PracticeBoard'), {
+  ssr: false,
+  loading: () => <div>Loading practice board...</div>
+});
 
 
 export default function Home() {

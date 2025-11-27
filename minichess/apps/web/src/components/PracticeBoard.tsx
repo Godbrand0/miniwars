@@ -1,9 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Chessboard } from 'react-chessboard';
+import dynamic from 'next/dynamic';
 import { usePracticeGame } from '@/hooks/usePracticeGame';
 import PracticeStats from '@/components/practice-stats';
+
+// Dynamic import with no SSR
+const Chessboard = dynamic(() => import('react-chessboard').then(mod => mod.Chessboard), {
+  ssr: false,
+  loading: () => <div>Loading chessboard...</div> // Optional loading state
+}) as any;
 
 export default function PracticeBoard() {
   const { game, isThinking, gameStats, startNewGame, makePlayerMove } = usePracticeGame();

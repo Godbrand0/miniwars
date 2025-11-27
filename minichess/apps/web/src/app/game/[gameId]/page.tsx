@@ -5,9 +5,15 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { createPublicClient, http } from 'viem';
 import { celoSepolia } from 'viem/chains';
-import ChessBoard from '@/components/ChessBoard';
+import dynamic from 'next/dynamic';
 import { useGameContract } from '@/hooks/useGameContract';
 import MiniChessEscrowPaymasterABI from '@/contracts/MiniChessEscrowPaymaster.json';
+
+// Dynamic import with no SSR
+const ChessBoard = dynamic(() => import('@/components/ChessBoard'), {
+  ssr: false,
+  loading: () => <div>Loading chess board...</div>
+});
 
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
 

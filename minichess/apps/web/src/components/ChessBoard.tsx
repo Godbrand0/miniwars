@@ -1,10 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Chessboard } from 'react-chessboard';
+import dynamic from 'next/dynamic';
 import { Chess } from 'chess.js';
 import { useAccount } from 'wagmi';
 import { useGameContract } from '@/hooks/useGameContract';
+
+// Dynamic import with no SSR
+const Chessboard = dynamic(() => import('react-chessboard').then(mod => mod.Chessboard), {
+  ssr: false,
+  loading: () => <div>Loading chessboard...</div> // Optional loading state
+}) as any;
 
 interface ChessBoardProps {
   gameId: number;
