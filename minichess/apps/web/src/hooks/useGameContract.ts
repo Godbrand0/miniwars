@@ -526,7 +526,7 @@ export function useGameContract() {
    */
   async function cancelGame(gameId: number) {
     console.log('[Game Contract] Cancelling game:', gameId);
-    
+
     if (!address) {
       throw new Error('No wallet connected');
     }
@@ -534,7 +534,7 @@ export function useGameContract() {
     setLoading(true);
     try {
       const { encodeFunctionData, createWalletClient, custom } = require('viem');
-      
+
       // Prepare cancel game transaction
       const userOp = {
         target: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
@@ -567,19 +567,84 @@ export function useGameContract() {
           }
         })
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(`Bundler error: ${error}`);
       }
-      
+
       const data = await response.json();
       console.log('[Game Contract] Cancel transaction hash:', data.transactionHash);
 
       return data.transactionHash;
-      
+
     } catch (error) {
       console.error('[Game Contract] Failed to cancel game:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  /**
+   * Claim timeout win when opponent hasn't moved
+   */
+  async function claimTimeout(gameId: number) {
+    console.log('[Game Contract] Claiming timeout for game:', gameId);
+
+    if (!address) {
+      throw new Error('No wallet connected');
+    }
+
+    setLoading(true);
+    try {
+      const { encodeFunctionData } = require('viem');
+
+      // Prepare claim timeout transaction
+      const userOp = {
+        target: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
+        data: encodeFunctionData({
+          abi: MiniChessEscrowPaymasterABI.abi,
+          functionName: 'claimTimeout',
+          args: [BigInt(gameId)]
+        }),
+        value: BigInt(0)
+      };
+
+      console.log('[Game Contract] Sending timeout claim operation to bundler');
+
+      // Convert BigInt values to strings for JSON serialization
+      const serializableOp = {
+        target: userOp.target,
+        data: userOp.data,
+        value: userOp.value.toString()
+      };
+
+      // Send to custom bundler
+      const bundlerUrl = process.env.NEXT_PUBLIC_BUNDLER_URL || 'http://localhost:3001';
+      const response = await fetch(`${bundlerUrl}/sendUserOperation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userOperation: {
+            sender: address,
+            operations: [serializableOp]
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Bundler error: ${error}`);
+      }
+
+      const data = await response.json();
+      console.log('[Game Contract] Timeout claim transaction hash:', data.transactionHash);
+
+      return data.transactionHash;
+
+    } catch (error) {
+      console.error('[Game Contract] Failed to claim timeout:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -608,6 +673,7 @@ export function useGameContract() {
     createGameSessionSimple, // Add fallback for backward compatibility
     capturePiecePaymaster,
     cancelGame,
+    claimTimeout,
     getPlayerStats,
     getPlayerGameHistory,
     getPlayerGameCount,

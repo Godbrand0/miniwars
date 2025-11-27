@@ -37,6 +37,8 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
   const [player2Balance, setPlayer2Balance] = useState(2.5);
   const [captureAnimations, setCaptureAnimations] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [lastAppliedMoveNumber, setLastAppliedMoveNumber] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const { address } = useAccount();
   const { capturePiecePaymaster, loading, isReady, isSessionValid } = useGameContract();
@@ -56,6 +58,94 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
       setCaptureAnimations(prev => prev.filter(id => id !== animationId));
     }, 2000);
   };
+
+  // Submit move to API
+  const submitMove = async (from: string, to: string, promotion?: string) => {
+    try {
+      const response = await fetch(`/api/games/${gameId}/moves`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from,
+          to,
+          promotion,
+          player: address
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Failed to submit move to API');
+      } else {
+        const data = await response.json();
+        console.log('[Move Sync] Move submitted:', data.move);
+      }
+    } catch (error) {
+      console.error('[Move Sync] Error submitting move:', error);
+    }
+  };
+
+  // Fetch and apply opponent moves
+  const fetchAndApplyMoves = async () => {
+    if (isSyncing) return; // Prevent concurrent syncs
+    
+    try {
+      setIsSyncing(true);
+      const response = await fetch(`/api/games/${gameId}/moves`);
+      
+      if (!response.ok) {
+        console.error('Failed to fetch moves from API');
+        return;
+      }
+
+      const data = await response.json();
+      const moves = data.moves || [];
+
+      // Apply only new moves from opponent
+      const newMoves = moves.filter((move: any) => 
+        move.moveNumber > lastAppliedMoveNumber &&
+        move.player.toLowerCase() !== address?.toLowerCase()
+      );
+
+      if (newMoves.length > 0) {
+        console.log(`[Move Sync] Applying ${newMoves.length} new opponent move(s)`);
+        
+        const gameCopy = new Chess(game.fen());
+        
+        for (const move of newMoves) {
+          const result = gameCopy.move({
+            from: move.from,
+            to: move.to,
+            promotion: move.promotion || 'q'
+          });
+
+          if (result) {
+            console.log(`[Move Sync] Applied move ${move.moveNumber}: ${move.from} -> ${move.to}`);
+          } else {
+            console.error(`[Move Sync] Failed to apply move ${move.moveNumber}`);
+          }
+        }
+
+        setGame(gameCopy);
+        setLastAppliedMoveNumber(moves[moves.length - 1].moveNumber);
+      }
+    } catch (error) {
+      console.error('[Move Sync] Error fetching moves:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Poll for new moves every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchAndApplyMoves();
+    }, 2000);
+
+    // Initial fetch
+    fetchAndApplyMoves();
+
+    return () => clearInterval(interval);
+  }, [gameId, lastAppliedMoveNumber, address, game.fen()]);
 
   function makeMove({ sourceSquare, targetSquare }: PieceDropHandlerArgs): boolean {
     // Guard against null targetSquare
@@ -80,6 +170,9 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
     if (move === null) return false;
 
     setGame(gameCopy);
+
+    // Submit move to API for real-time sync
+    submitMove(sourceSquare, targetSquare, move.promotion);
 
     // Handle capture with paymaster (gasless + no signature)
     if (move.captured) {
@@ -151,9 +244,16 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
     <div className="flex flex-col items-center gap-6 p-4">
       <div className="w-full max-w-md">
         {/* Gasless indicator */}
-        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-          <span className="text-sm font-semibold">🔄 Gasless Mode Active</span>
-          <p className="text-xs">No gas fees for captures!</p>
+        <div className="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded flex justify-between items-center">
+          <div>
+            <span className="text-sm font-semibold">🔄 Gasless Mode Active</span>
+            <p className="text-xs">No gas fees for captures!</p>
+          </div>
+          {isSyncing && (
+            <div className="text-xs bg-white/50 px-2 py-1 rounded animate-pulse">
+              Syncing...
+            </div>
+          )}
         </div>
 
         <div className="mb-4 flex justify-between text-sm font-semibold">

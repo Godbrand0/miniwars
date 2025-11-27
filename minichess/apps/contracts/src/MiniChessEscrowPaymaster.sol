@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
+
+
 /**
  * @title MiniChessEscrowPaymaster
  * @dev Gasless chess escrow with paymaster support and comprehensive player statistics
@@ -67,16 +69,17 @@ contract MiniChessEscrowPaymaster is ReentrancyGuard {
      * Stores all relevant information about a chess game
      */
     struct Game {
-        address player1;           // First player (game creator)
-        address player2;           // Second player (joins existing game)
+        address player1;           // First player (game creator) - smart account / msg.sender
+        address player2;           // Second player (joins existing game) - smart account / msg.sender
         uint256 player1Escrow;     // Initial escrow from player1
         uint256 player2Escrow;     // Initial escrow from player2
-        uint256 player1Balance;     // Current balance after captures
-        uint256 player2Balance;     // Current balance after captures
-        GameStatus status;          // Current game state
-        address winner;             // Winner address (set when finished)
-        uint256 createdAt;          // Game creation timestamp
-        uint256 lastMoveAt;        // Last move timestamp (for timeout)
+        uint256 player1Balance;    // Current balance after captures
+        uint256 player2Balance;    // Current balance after captures
+        GameStatus status;         // Current game state
+        address winner;            // Winner address (set when finished)
+        uint256 createdAt;         // Game creation timestamp
+        uint256 lastMoveAt;       // Last move timestamp (for timeout)
+        address creatorSigner;    // EOA that authorized the session for player1
     }
     
     /**
@@ -215,6 +218,7 @@ contract MiniChessEscrowPaymaster is ReentrancyGuard {
         game.status = GameStatus.WAITING;
         game.createdAt = block.timestamp;
         game.lastMoveAt = block.timestamp;
+        game.creatorSigner = actualSigner;
         
         authorized[gameId][msg.sender] = true;
         
@@ -251,7 +255,7 @@ contract MiniChessEscrowPaymaster is ReentrancyGuard {
         Game storage game = games[gameId];
         require(game.status == GameStatus.WAITING, "Game not available");
         require(game.player2 == address(0), "Game already has player 2");
-        require(msg.sender != game.player1, "Cannot join own game");
+        require(actualSigner != game.creatorSigner, "Cannot join own game");
         
         bytes32 sessionMessageHash = keccak256(abi.encodePacked(
             "AUTHORIZE_SESSION", gameId, block.chainid

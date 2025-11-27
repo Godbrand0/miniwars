@@ -4,58 +4,10 @@ import { formatEther } from 'viem'
 import { readContract } from 'wagmi/actions'
 import { Button } from './ui/button'
 
+import MiniChessEscrowPaymasterABI from '../contracts/MiniChessEscrowPaymaster.json'
+
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`
 
-const CONTRACT_ABI = [
-  {
-    "inputs": [{"name": "player", "type": "address"}],
-    "name": "getPlayerStats",
-    "outputs": [
-      {"name": "gamesPlayed", "type": "uint256"},
-      {"name": "gamesWon", "type": "uint256"},
-      {"name": "gamesLost", "type": "uint256"},
-      {"name": "totalEarned", "type": "uint256"},
-      {"name": "totalLost", "type": "uint256"},
-      {"name": "winRate", "type": "uint256"}
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"name": "player", "type": "address"}],
-    "name": "getPlayerGameCount",
-    "outputs": [{"name": "", "type": "uint256"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {"name": "player", "type": "address"},
-      {"name": "limit", "type": "uint256"},
-      {"name": "offset", "type": "uint256"}
-    ],
-    "name": "getPlayerGameHistory",
-    "outputs": [{"name": "", "type": "uint256[]"}],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [{"name": "gameId", "type": "uint256"}],
-    "name": "getGame",
-    "outputs": [
-      {"name": "player1", "type": "address"},
-      {"name": "player2", "type": "address"},
-      {"name": "player1Balance", "type": "uint256"},
-      {"name": "player2Balance", "type": "uint256"},
-      {"name": "status", "type": "uint8"},
-      {"name": "winner", "type": "address"},
-      {"name": "createdAt", "type": "uint256"},
-      {"name": "lastMoveAt", "type": "uint256"}
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  }
-]
 
 export function PlayerProfile() {
   const config = useConfig()
@@ -68,7 +20,7 @@ export function PlayerProfile() {
   // Get player stats
   const { data: statsData } = useReadContract({
     address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
+    abi: MiniChessEscrowPaymasterABI.abi,
     functionName: 'getPlayerStats',
     args: [address as `0x${string}`],
     query: {
@@ -79,7 +31,7 @@ export function PlayerProfile() {
   // Get total game count
   const { data: gameCount } = useReadContract({
     address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
+    abi: MiniChessEscrowPaymasterABI.abi,
     functionName: 'getPlayerGameCount',
     args: [address as `0x${string}`],
     query: {
@@ -90,7 +42,7 @@ export function PlayerProfile() {
   // Get game history with pagination
   const { data: gameIds } = useReadContract({
     address: CONTRACT_ADDRESS,
-    abi: CONTRACT_ABI,
+    abi: MiniChessEscrowPaymasterABI.abi,
     functionName: 'getPlayerGameHistory',
     args: [address as `0x${string}`, BigInt(GAMES_PER_PAGE), BigInt(page * GAMES_PER_PAGE)],
     query: {
@@ -114,7 +66,7 @@ export function PlayerProfile() {
           try {
             const gameData = await readContract(config, {
               address: CONTRACT_ADDRESS,
-              abi: CONTRACT_ABI,
+              abi: MiniChessEscrowPaymasterABI.abi,
               functionName: 'getGame',
               args: [gameId]
             })
