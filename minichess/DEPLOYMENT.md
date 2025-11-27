@@ -15,8 +15,8 @@ minichess/
 ## Vercel Configuration
 
 - **Root Directory**: `minichess/apps/web` (set in Vercel UI)
-- **Install Command**: `npm install` (from vercel.json)
-- **Build Command**: `npm run build` (from vercel.json)
+- **Install Command**: `npm install -g pnpm@8.10.0 && pnpm install --frozen-lockfile --ignore-scripts` (from vercel.json)
+- **Build Command**: `pnpm run build --filter=web` (from vercel.json)
 
 ## Important Notes
 
@@ -39,3 +39,5 @@ If Vercel still can't detect Next.js:
 2. Verify the root package.json contains Next.js in dependencies
 3. Check that vercel.json has correct build and install commands
 4. Make sure the deployment includes the root package.json file
+5. If encountering React Native dependency conflicts, ensure pnpm is used with --ignore-scripts flag
+6. The @react-native-async-storage package is only used in web app and handled by pnpm workspace

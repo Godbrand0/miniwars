@@ -1,4 +1,4 @@
 {
-  "installCommand": "npm install",
-  "buildCommand": "npm run build"
+  "installCommand": "npm install -g pnpm@8.10.0 && pnpm install --frozen-lockfile --ignore-scripts",
+  "buildCommand": "pnpm run build --filter=web"
 }
