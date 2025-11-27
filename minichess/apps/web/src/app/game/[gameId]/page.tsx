@@ -7,6 +7,7 @@ import { createPublicClient, http } from 'viem';
 import { celoSepolia } from 'viem/chains';
 import dynamic from 'next/dynamic';
 import { useGameContract } from '@/hooks/useGameContract';
+import { useActiveGame } from '@/hooks/useActiveGame';
 import MiniChessEscrowPaymasterABI from '@/contracts/MiniChessEscrowPaymaster.json';
 
 // Dynamic import with no SSR
@@ -22,6 +23,7 @@ export default function GamePage() {
   const router = useRouter();
   const { address, isConnected } = useAccount();
   const { cancelGame, loading: cancelLoading } = useGameContract();
+  const { clearActiveGame } = useActiveGame();
   const gameId = Number(params.gameId);
 
   const [gameState, setGameState] = useState<{
@@ -104,6 +106,15 @@ export default function GamePage() {
     return () => clearInterval(interval);
   }, [gameState]);
 
+  // Clear active game from storage when game ends
+  useEffect(() => {
+    if (gameState && (gameState.status === 2 || gameState.status === 3)) {
+      // Game is finished or cancelled
+      console.log('Game ended, clearing from storage');
+      clearActiveGame();
+    }
+  }, [gameState?.status]);
+
   const handleCancelGame = async () => {
     if (!canCancel) {
       alert('You must wait 5 minutes before cancelling');
@@ -117,10 +128,13 @@ export default function GamePage() {
     try {
       const txHash = await cancelGame(gameId);
       console.log('Cancel transaction:', txHash);
-      
+
+      // Clear active game from storage
+      clearActiveGame();
+
       // Wait a moment for the transaction to be processed
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Redirect to home
       router.push('/');
     } catch (error) {

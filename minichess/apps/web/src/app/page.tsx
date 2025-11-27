@@ -5,6 +5,7 @@ import { useAccount, useConnect } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useGameContract } from '@/hooks/useGameContract';
+import { useActiveGame } from '@/hooks/useActiveGame';
 import { PlayerProfile } from '@/components/player-profile';
 import Link from 'next/link';
 import { createPublicClient, http, decodeEventLog } from 'viem';
@@ -28,7 +29,8 @@ export default function Home() {
   const { connect } = useConnect();
   const router = useRouter();
   const { createGameWithSession, joinGameWithSession, cancelGame, isReady, isSessionValid } = useGameContract();
-  
+  const { isChecking, setActiveGame } = useActiveGame();
+
   const [gameId, setGameId] = useState<number | null>(null);
   const [joinGameId, setJoinGameId] = useState('');
   const [cancelGameId, setCancelGameId] = useState('');
@@ -75,7 +77,10 @@ export default function Home() {
         // @ts-ignore
         const newGameId = Number(event.args.gameId);
         console.log('Game created with ID:', newGameId);
-        
+
+        // Store active game ID
+        setActiveGame(newGameId);
+
         // Redirect to game waiting room
         router.push(`/game/${newGameId}`);
       } else {
@@ -100,7 +105,10 @@ export default function Home() {
       
       // Wait for transaction receipt
       await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
-      
+
+      // Store active game ID
+      setActiveGame(parseInt(joinGameId));
+
       // Redirect to game page
       router.push(`/game/${joinGameId}`);
       
@@ -133,6 +141,18 @@ export default function Home() {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking for active game
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking for active games...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isConnected) {
     return (

@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Chess } from 'chess.js';
 import { useAccount } from 'wagmi';
 import { useGameContract } from '@/hooks/useGameContract';
+import { useActiveGame } from '@/hooks/useActiveGame';
 
 // Dynamic import with no SSR
 const ChessboardWrapper = dynamic(() => import('@/components/ChessboardWrapper'), {
@@ -47,6 +48,7 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
   
   const { address } = useAccount();
   const { capturePiecePaymaster, loading, isReady, isSessionValid } = useGameContract();
+  const { clearActiveGame } = useActiveGame();
 
   const isMyTurn = () => {
     const turn = game.turn();
@@ -233,6 +235,10 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
     // Check for game over
     if (gameCopy.isGameOver()) {
       const winner = gameCopy.turn() === 'w' ? player2 : player1;
+
+      // Clear active game from storage since game is over
+      clearActiveGame();
+
       setTimeout(() => {
         if (gameCopy.isCheckmate()) {
           alert(`Checkmate! ${winner === address ? 'You' : 'Opponent'} won!`);
