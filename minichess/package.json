@@ -1,23 +1,26 @@
 {
   "name": "minichess",
   "version": "0.1.0",
-  "description": "a new project",
+  "description": "MiniChess - A blockchain chess game",
   "private": true,
   "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
-    "lint": "turbo lint",
-    "clean": "turbo clean",
-    "type-check": "turbo type-check"
+    "build": "cd apps/web && npm run build",
+    "dev": "cd apps/web && npm run dev",
+    "start": "cd apps/web && npm run start",
+    "lint": "cd apps/web && npm run lint"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/node": "^20.8.0",
-    "turbo": "^1.10.16",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "typescript": "^5.2.2"
   },
-  "packageManager": "pnpm@8.10.0",
-  "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
-  }
+  "workspaces": [
+    "apps/*"
+  ]
 }
