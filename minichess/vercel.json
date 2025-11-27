@@ -1,5 +1,4 @@
 {
-  "rootDirectory": "apps/web",
-  "installCommand": "pnpm install --filter=web",
-  "buildCommand": "pnpm build --filter=web"
+  "installCommand": "npm install -g pnpm@8.10.0 && pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm run build --filter=web"
 }
