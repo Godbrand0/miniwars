@@ -28,7 +28,7 @@ minichess/
 
 ## Dependencies
 
-- Next.js 14.0.0 is defined in both root `package.json` and `apps/web/package.json`
+- Next.js 14.2.33 is defined in both root `package.json` and `apps/web/package.json`
 - The project uses pnpm for package management
 - Workspace configuration is in `pnpm-workspace.yaml`
 
