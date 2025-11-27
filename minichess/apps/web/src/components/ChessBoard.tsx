@@ -56,6 +56,17 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
     const p1 = player1.toLowerCase();
     const p2 = player2.toLowerCase();
 
+    // Check if both players are the same (data issue)
+    if (p1 === p2) {
+      console.error('ERROR: Both player addresses are the same!', {
+        player1: p1,
+        player2: p2,
+        gameId
+      });
+      // If addresses are the same, treat current user as both players
+      return true;
+    }
+
     console.log('isMyTurn check:', {
       turn,
       myAddress,
@@ -124,6 +135,18 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
       console.log('[Move Sync] Last applied move number:', lastAppliedMoveNumber);
       console.log('[Move Sync] Current address:', address?.toLowerCase());
 
+      // Determine actual player addresses from move history
+      // The API stores the actual wallet addresses, not session keys
+      if (moves.length > 0 && player1.toLowerCase() === player2.toLowerCase()) {
+        const uniquePlayers = [...new Set(moves.map((m: any) => m.player.toLowerCase()))];
+        console.log('[Move Sync] Detected unique players from moves:', uniquePlayers);
+
+        if (uniquePlayers.length >= 2) {
+          console.log('[Move Sync] Using API player addresses instead of on-chain addresses');
+          // We'll handle turn validation based on move history instead
+        }
+      }
+
       // Find the highest move number we've already seen
       const allMoveNumbers = moves.map((m: any) => m.moveNumber);
       const highestMoveNumber = allMoveNumbers.length > 0 ? Math.max(...allMoveNumbers) : 0;
@@ -172,7 +195,7 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
     return () => clearInterval(interval);
   }, [gameId, lastAppliedMoveNumber, address, game.fen()]);
 
-  function makeMove(sourceSquare: string, targetSquare: string, piece: string): boolean {
+  async function makeMove(sourceSquare: string, targetSquare: string, piece: string): Promise<boolean> {
     console.log('ChessBoard makeMove called', { sourceSquare, targetSquare, piece });
 
     // Guard against null targetSquare
@@ -181,10 +204,30 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
       return false;
     }
 
-    if (!isMyTurn()) {
-      console.log('Not your turn');
-      alert('Not your turn!');
-      return false;
+    // Check if it's player's turn using move history
+    try {
+      const response = await fetch(`/api/games/${gameId}/moves`);
+      if (response.ok) {
+        const data = await response.json();
+        const moves = data.moves || [];
+
+        if (moves.length > 0) {
+          const lastMove = moves[moves.length - 1];
+          if (lastMove.player.toLowerCase() === address?.toLowerCase()) {
+            console.log('Not your turn - you made the last move');
+            alert('Not your turn!');
+            return false;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking turn from API:', error);
+      // Fall back to local turn check
+      if (!isMyTurn()) {
+        console.log('Not your turn (fallback check)');
+        alert('Not your turn!');
+        return false;
+      }
     }
 
     if (isProcessing || !isReady) {
@@ -269,6 +312,14 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
     return true;
   }
 
+  // Synchronous wrapper for the chessboard component
+  const handlePieceDrop = (sourceSquare: string, targetSquare: string, piece: string): boolean => {
+    // Execute the async makeMove function but don't wait for it
+    makeMove(sourceSquare, targetSquare, piece);
+    // Return true immediately to allow the chessboard to update
+    return true;
+  };
+
   if (!isSessionValid()) {
     return (
       <div className="flex flex-col items-center gap-6 p-4">
@@ -320,7 +371,7 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
 
         <ChessboardWrapper
           position={game.fen()}
-          onPieceDrop={makeMove}
+          onPieceDrop={handlePieceDrop}
           boardOrientation={address === player1 ? 'white' : 'black'}
         />
 
