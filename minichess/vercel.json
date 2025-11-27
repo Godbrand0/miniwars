@@ -1,0 +1,4 @@
+{
+  "installCommand": "cd /home/godbrand/Documents/GitHub/miniwars/minichess && npm install -g pnpm@8.10.0 && pnpm install --frozen-lockfile",
+  "buildCommand": "cd /home/godbrand/Documents/GitHub/miniwars/minichess && pnpm run build --filter=web"
+}
