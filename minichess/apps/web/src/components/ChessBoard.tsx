@@ -5,7 +5,6 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { useAccount } from 'wagmi';
 import { useGameContract } from '@/hooks/useGameContract';
-import type { PieceDropHandlerArgs } from 'react-chessboard';
 
 interface ChessBoardProps {
   gameId: number;
@@ -147,7 +146,7 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
     return () => clearInterval(interval);
   }, [gameId, lastAppliedMoveNumber, address, game.fen()]);
 
-  function makeMove({ sourceSquare, targetSquare }: PieceDropHandlerArgs): boolean {
+  function makeMove(sourceSquare: string, targetSquare: string, piece: string): boolean {
     // Guard against null targetSquare
     if (!targetSquare) return false;
     if (!isMyTurn()) {
@@ -277,11 +276,9 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
         ))}
 
         <Chessboard
-          options={{
-            position: game.fen(),
-            onPieceDrop: makeMove,
-            boardOrientation: address === player1 ? 'white' : 'black'
-          }}
+          position={game.fen()}
+          onPieceDrop={makeMove}
+          boardOrientation={address === player1 ? 'white' : 'black'}
         />
 
         <div className="mt-4 text-center text-sm">

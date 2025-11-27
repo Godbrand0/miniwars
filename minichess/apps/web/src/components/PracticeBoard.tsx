@@ -4,13 +4,12 @@ import { useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { usePracticeGame } from '@/hooks/usePracticeGame';
 import PracticeStats from '@/components/practice-stats';
-import type { PieceDropHandlerArgs } from 'react-chessboard';
 
 export default function PracticeBoard() {
   const { game, isThinking, gameStats, startNewGame, makePlayerMove } = usePracticeGame();
   const [showStats, setShowStats] = useState(false);
 
-  const handlePieceDrop = ({ sourceSquare, targetSquare }: PieceDropHandlerArgs): boolean => {
+  const handlePieceDrop = (sourceSquare: string, targetSquare: string, piece: string): boolean => {
     if (!targetSquare) return false;
     return makePlayerMove(sourceSquare, targetSquare);
   };
@@ -71,11 +70,9 @@ export default function PracticeBoard() {
         </div>
 
         <Chessboard
-          options={{
-            position: game.fen(),
-            onPieceDrop: handlePieceDrop,
-            boardOrientation: 'white'
-          }}
+          position={game.fen()}
+          onPieceDrop={handlePieceDrop}
+          boardOrientation='white'
         />
 
         <div className="mt-4 text-center text-sm">
