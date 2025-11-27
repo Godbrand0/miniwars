@@ -7,10 +7,10 @@ import { useAccount } from 'wagmi';
 import { useGameContract } from '@/hooks/useGameContract';
 
 // Dynamic import with no SSR
-const Chessboard = dynamic(() => import('react-chessboard').then(mod => mod.Chessboard), {
+const ChessboardWrapper = dynamic(() => import('@/components/ChessboardWrapper'), {
   ssr: false,
   loading: () => <div>Loading chessboard...</div> // Optional loading state
-}) as any;
+});
 
 interface ChessBoardProps {
   gameId: number;
@@ -153,14 +153,22 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
   }, [gameId, lastAppliedMoveNumber, address, game.fen()]);
 
   function makeMove(sourceSquare: string, targetSquare: string, piece: string): boolean {
+    console.log('ChessBoard makeMove called', { sourceSquare, targetSquare, piece });
+
     // Guard against null targetSquare
-    if (!targetSquare) return false;
+    if (!targetSquare) {
+      console.log('No target square');
+      return false;
+    }
+
     if (!isMyTurn()) {
+      console.log('Not your turn');
       alert('Not your turn!');
       return false;
     }
 
     if (isProcessing || !isReady) {
+      console.log('Processing or not ready', { isProcessing, isReady });
       alert('Transaction in progress or session not ready...');
       return false;
     }
@@ -172,7 +180,12 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
       promotion: 'q',
     });
 
-    if (move === null) return false;
+    if (move === null) {
+      console.log('Invalid move');
+      return false;
+    }
+
+    console.log('Move successful', move);
 
     setGame(gameCopy);
 
@@ -281,7 +294,7 @@ export default function ChessBoardPaymaster({ gameId, player1, player2 }: ChessB
           </div>
         ))}
 
-        <Chessboard
+        <ChessboardWrapper
           position={game.fen()}
           onPieceDrop={makeMove}
           boardOrientation={address === player1 ? 'white' : 'black'}

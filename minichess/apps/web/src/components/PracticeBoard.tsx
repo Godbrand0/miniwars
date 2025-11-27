@@ -6,10 +6,10 @@ import { usePracticeGame } from '@/hooks/usePracticeGame';
 import PracticeStats from '@/components/practice-stats';
 
 // Dynamic import with no SSR
-const Chessboard = dynamic(() => import('react-chessboard').then(mod => mod.Chessboard), {
+const ChessboardWrapper = dynamic(() => import('@/components/ChessboardWrapper'), {
   ssr: false,
   loading: () => <div>Loading chessboard...</div> // Optional loading state
-}) as any;
+});
 
 export default function PracticeBoard() {
   const { game, isThinking, gameStats, startNewGame, makePlayerMove } = usePracticeGame();
@@ -75,7 +75,7 @@ export default function PracticeBoard() {
           </div>
         </div>
 
-        <Chessboard
+        <ChessboardWrapper
           position={game.fen()}
           onPieceDrop={handlePieceDrop}
           boardOrientation='white'
